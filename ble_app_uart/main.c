@@ -470,7 +470,8 @@ static void advertising_init(void)
 
     // Build advertising data struct to pass into @ref ble_advertising_init.
     memset(&advdata, 0, sizeof(advdata));
-    advdata.name_type          = BLE_ADVDATA_FULL_NAME;
+    advdata.name_type          = BLE_ADVDATA_SHORT_NAME;
+		advdata.short_name_len		 = 6;
     advdata.include_appearance = false;
     advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
 
