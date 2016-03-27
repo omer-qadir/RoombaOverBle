@@ -402,9 +402,14 @@ void uart_event_handle(app_uart_evt_t * p_event)
     {
         case APP_UART_DATA_READY:
             UNUSED_VARIABLE(app_uart_get(&data_array[index]));
+
+#if (DEBUG_LEVEL >= 0)
+						ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
+						ITM_SendChar (data_array[index]);	// log data byte
+#endif
             index++;
 
-            if ((data_array[index - 1] == '\n') || (index >= (BLE_NUS_MAX_DATA_LEN)))
+            if ( (index == roombaExpectedResponseLength) || (data_array[index - 1] == '\n') || (index >= (BLE_NUS_MAX_DATA_LEN)))
             {
                 err_code = ble_nus_string_send(&m_nus, data_array, index);
                 if (err_code != NRF_ERROR_INVALID_STATE)
