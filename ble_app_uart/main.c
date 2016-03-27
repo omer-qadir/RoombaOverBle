@@ -133,11 +133,79 @@ static void gap_params_init(void)
 /**@snippet [Handling the data received over BLE] */
 static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
 {
+/*
     for (uint32_t i = 0; i < length; i++)
     {
         while(app_uart_put(p_data[i]) != NRF_SUCCESS);
+#if (DEBUG_LEVEL >= 0)
+				ITM_SendChar ('-');		// log that data has come from BLE and is going over UART eventually
+				ITM_SendChar (p_data[i]);	// log data byte
+#endif
     }
-    while(app_uart_put('\n') != NRF_SUCCESS);
+    //while(app_uart_put('\n') != NRF_SUCCESS);	// OMER removing final end line char from being sent to ROOMBA
+*/
+	  //uint8_t roombaSensorGetCommand[3] = {142, 0, '\0'};
+	  //printf( roombaSensorGetCommand );
+
+	#if (DEBUG_LEVEL >= 0)
+	ITM_SendChar ('-');
+#endif
+
+	if (length < 1){
+#if (DEBUG_LEVEL >= 0)
+		uint8_t *errorString = "\n\r Error! Wrong code received over BLE";
+			for (int ii=0; ii<strlen ((const char*)errorString); ii++)
+				ITM_SendChar (errorString[ii]);
+#endif
+		return;
+	}
+		
+	switch (p_data[0]) {
+		case 'c' :
+			roombaPrintfCmd( ROOMBA_CMD_START );
+			roombaPrintfCmd( ROOMBA_CMD_CLEAN );
+#if (DEBUG_LEVEL >= 0)
+//			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
+//				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
+			ITM_SendChar ('c');
+#endif
+			break;
+		case 'd' :
+			roombaPrintfCmd( ROOMBA_CMD_START );
+			roombaPrintfCmd( ROOMBA_CMD_DOCK );
+#if (DEBUG_LEVEL >= 0)
+//			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
+//				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
+			ITM_SendChar ('d');
+#endif
+			break;
+		case 'g' :
+		{
+			uint8_t roombaSensorGetCommand[3] = {142, 2, '\0'};
+			printf( (const char*)roombaSensorGetCommand );
+			roombaExpectedResponseLength = 6;
+#if (DEBUG_LEVEL >= 0)
+//			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
+//				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
+			ITM_SendChar ('g');
+#endif
+		}
+			break;
+//	  uint8_t roombaSensorGetCommand[3] = {142, 0, '\0'};
+//	  printf( roombaSensorGetCommand );
+
+		//case 's' :
+		default:
+			roombaPrintfCmd( ROOMBA_CMD_START );
+			roombaPrintfCmd( ROOMBA_CMD_ENTER_SAFE_MODE );
+#if (DEBUG_LEVEL >= 0)
+//			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
+//				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)[ii]);
+			ITM_SendChar ('s');
+#endif
+			break;
+	}
+
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -402,9 +470,14 @@ void uart_event_handle(app_uart_evt_t * p_event)
     {
         case APP_UART_DATA_READY:
             UNUSED_VARIABLE(app_uart_get(&data_array[index]));
+
+#if (DEBUG_LEVEL >= 0)
+						ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
+						ITM_SendChar (data_array[index]);	// log data byte
+#endif
             index++;
 
-            if ((data_array[index - 1] == '\n') || (index >= (BLE_NUS_MAX_DATA_LEN)))
+            if ( (index == roombaExpectedResponseLength) || (data_array[index - 1] == '\n') || (index >= (BLE_NUS_MAX_DATA_LEN)))
             {
                 err_code = ble_nus_string_send(&m_nus, data_array, index);
                 if (err_code != NRF_ERROR_INVALID_STATE)
@@ -412,6 +485,8 @@ void uart_event_handle(app_uart_evt_t * p_event)
                     APP_ERROR_CHECK(err_code);
                 }
                 
+								ITM_SendString ("\ndata sent over ble\n");
+								
                 index = 0;
             }
             break;
@@ -439,8 +514,8 @@ static void uart_init(void)
     uint32_t                     err_code;
     const app_uart_comm_params_t comm_params =
     {
-        RX_PIN_NUMBER,
-        TX_PIN_NUMBER,
+        28, // RX_PIN_NUMBER,
+        29, // TX_PIN_NUMBER,
         RTS_PIN_NUMBER,
         CTS_PIN_NUMBER,
         //APP_UART_FLOW_CONTROL_ENABLED,
@@ -470,7 +545,8 @@ static void advertising_init(void)
 
     // Build advertising data struct to pass into @ref ble_advertising_init.
     memset(&advdata, 0, sizeof(advdata));
-    advdata.name_type          = BLE_ADVDATA_FULL_NAME;
+    advdata.name_type          = BLE_ADVDATA_SHORT_NAME;
+		advdata.short_name_len		 = 6;
     advdata.include_appearance = false;
     advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
 
@@ -535,10 +611,55 @@ int main(void)
     advertising_init();
     conn_params_init();
 
-    printf("\r\nUART Start!\r\n");
+
+
+    //printf("\r\nUART Start!\r\n");
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
-    
+
+	  roombaPrintfCmd( ROOMBA_CMD_START );
+#if (DEBUG_LEVEL >= 0)
+		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_START)); ii++)
+			ITM_SendChar (ROOMBA_CMD_START);
+#endif
+		
+	  roombaPrintfCmd( ROOMBA_CMD_ENTER_SAFE_MODE );
+#if (DEBUG_LEVEL >= 0)
+		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
+			ITM_SendChar (ROOMBA_CMD_ENTER_SAFE_MODE);
+#endif
+
+/*
+		roombaPrintfCmd( ROOMBA_CMD_CLEAN );
+#if (DEBUG_LEVEL >= 0)
+		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
+			ITM_SendChar (ROOMBA_CMD_START);
+#endif
+*/
+
+//	  uint8_t roombaSensorGetCommand[3] = {142, 0, '\0'};
+//	  printf( roombaSensorGetCommand );
+
+/*
+	  uint8_t roombaLEDonCommand[100] = {139, 0x0F, 0, 255, '\0'};
+	  printf( roombaLEDonCommand );
+#if (DEBUG_LEVEL >= 0)
+		for (int ii=0; ii<strlen (roombaLEDonCommand); ii++)
+			ITM_SendChar (roombaLEDonCommand[ii]);
+#endif
+*/
+		
+/*		roombaCommand[0]=130;
+	  printf((char*)(roombaCommand));
+		for (int ii=0; ii<strlen (roombaCommand); ii++)
+			ITM_SendChar (roombaCommand[0]);
+
+		roombaCommand[0]=131;		// enter safe mode
+	  printf((char*)(roombaCommand));
+		for (int ii=0; ii<strlen (roombaCommand); ii++)
+			ITM_SendChar (roombaCommand[0]);
+*/
+	
     // Enter main loop.
     for (;;)
     {
