@@ -536,10 +536,55 @@ int main(void)
     advertising_init();
     conn_params_init();
 
-    printf("\r\nUART Start!\r\n");
+
+
+    //printf("\r\nUART Start!\r\n");
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
-    
+
+	  roombaPrintfCmd( ROOMBA_CMD_START );
+#if (DEBUG_LEVEL >= 0)
+		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_START)); ii++)
+			ITM_SendChar (ROOMBA_CMD_START);
+#endif
+		
+	  roombaPrintfCmd( ROOMBA_CMD_ENTER_SAFE_MODE );
+#if (DEBUG_LEVEL >= 0)
+		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
+			ITM_SendChar (ROOMBA_CMD_ENTER_SAFE_MODE);
+#endif
+
+/*
+		roombaPrintfCmd( ROOMBA_CMD_CLEAN );
+#if (DEBUG_LEVEL >= 0)
+		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
+			ITM_SendChar (ROOMBA_CMD_START);
+#endif
+*/
+
+//	  uint8_t roombaSensorGetCommand[3] = {142, 0, '\0'};
+//	  printf( roombaSensorGetCommand );
+
+/*
+	  uint8_t roombaLEDonCommand[100] = {139, 0x0F, 0, 255, '\0'};
+	  printf( roombaLEDonCommand );
+#if (DEBUG_LEVEL >= 0)
+		for (int ii=0; ii<strlen (roombaLEDonCommand); ii++)
+			ITM_SendChar (roombaLEDonCommand[ii]);
+#endif
+*/
+		
+/*		roombaCommand[0]=130;
+	  printf((char*)(roombaCommand));
+		for (int ii=0; ii<strlen (roombaCommand); ii++)
+			ITM_SendChar (roombaCommand[0]);
+
+		roombaCommand[0]=131;		// enter safe mode
+	  printf((char*)(roombaCommand));
+		for (int ii=0; ii<strlen (roombaCommand); ii++)
+			ITM_SendChar (roombaCommand[0]);
+*/
+	
     // Enter main loop.
     for (;;)
     {
