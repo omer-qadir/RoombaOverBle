@@ -412,6 +412,8 @@ void uart_event_handle(app_uart_evt_t * p_event)
                     APP_ERROR_CHECK(err_code);
                 }
                 
+								ITM_SendString ("\ndata sent over ble\n");
+								
                 index = 0;
             }
             break;
