@@ -516,37 +516,37 @@ roomba_forcedock(roomba_comm_t* r)
 void
 roomba_print(roomba_comm_t* r)
 {
-	uint8_t str[100];
+	char str[100];
   sprintf(str, "mode: %d\n", r->mode);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "position: %.3lf %.3lf %.3lf\n", r->ox, r->oy, r->oa);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "bumpers: l:%d r:%d\n", r->bumper_left, r->bumper_right);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "wall: %d virtual wall: %d\n", r->wall, r->virtual_wall);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "wheeldrops: c:%d l:%d r:%d\n",
          r->wheeldrop_caster, r->wheeldrop_left, r->wheeldrop_right);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "cliff: l:%d fl:%d fr:%d r:%d\n",
          r->cliff_left, r->cliff_frontleft, r->cliff_frontright, r->cliff_right);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "overcurrent: dl:%d dr:%d mb:%d sb:%d v:%d\n",
          r->overcurrent_driveleft, r->overcurrent_driveright,
          r->overcurrent_mainbrush, r->overcurrent_sidebrush, r->overcurrent_vacuum);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "dirt: l:%d r:%d\n", r->dirtdetector_left, r->dirtdetector_right);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "remote opcode: %d\n", r->remote_opcode);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "buttons: p:%d s:%d c:%d m:%d\n",
          r->button_power, r->button_spot, r->button_clean, r->button_max);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "charging state: %d\n", r->charging_state);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
   sprintf(str, "battery: voltage:%.3lf current:%.3lf temp:%.3lf charge:%.3lf capacity:%.3f\n",
          r->voltage, r->current, r->temperature, r->charge, r->capacity);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
 
 }
 
@@ -622,7 +622,7 @@ roomba_vacuum(roomba_comm_t *r, int state)
 int
 roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, uint8_t clean, uint8_t spot, uint8_t status, uint8_t power_color, uint8_t power_intensity )
 {
-	uint8_t str[100];
+	char str[100];
   unsigned char cmdbuf[5];
   cmdbuf[0] = ROOMBA_OPCODE_LEDS;
   cmdbuf[1] = dirt_detect | max<<1 | clean<<2 | spot<<3 | status<<4;
@@ -630,7 +630,7 @@ roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, uint8_t clea
   cmdbuf[3] = power_intensity;
 
   sprintf(str, "Set LEDS[%d][%d][%d]\n",cmdbuf[1], cmdbuf[2], cmdbuf[3]);
-	ITM_SendString (str);
+	ITM_SendString ((uint8_t*)str);
 	/*
   if (write(r->fd, cmdbuf, 4) < 0)
   {
