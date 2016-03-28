@@ -72,7 +72,7 @@ static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
 static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}};  /**< Universally unique service identifier. */
 
-static uint8_t													roombaExpectedResponseLength;
+uint8_t													roombaExpectedResponseLength;
 
 /**@brief Function for assert macro callback.
  *
