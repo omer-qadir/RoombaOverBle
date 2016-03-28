@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <fcntl.h>
+//#include <fcntl.h>
 #include <sys/stat.h>
 #include <termios.h>
 #include <math.h>
@@ -34,23 +34,39 @@
 
 #include "config.h"
 
-#include <playerconfig.h>
+//#include <playerconfig.h>
 #include <replace/replace.h>
 //#include <sys/poll.h>
 
 #include "roomba_comms.h"
 
-roomba_comm_t*
-roomba_create(const char* serial_port)
+roomba_comm::roomba_comm()
+: rxPinNumber(28), txPinNumber (29), rtsPinNumber(RTS_PIN_NUMBER), ctsPinNumber(CTS_PIN_NUMBER),
+	parityMode(false),
+	baudRate(UART_BAUDRATE_BAUDRATE_Baud115200),
+	rxBufSize(UART_RX_BUF_SIZE), txBufSize(UART_TX_BUF_SIZE),
+	priority(APP_IRQ_PRIORITY_LOW)
 {
-  roomba_comm_t* r;
+    uint32_t                     err_code;
+    const app_uart_comm_params_t comm_params =
+    {
+        28, // RX_PIN_NUMBER,
+        29, // TX_PIN_NUMBER,
+        RTS_PIN_NUMBER,
+        CTS_PIN_NUMBER,
+        //APP_UART_FLOW_CONTROL_ENABLED,
+			  APP_UART_FLOW_CONTROL_DISABLED,
+        false,	// parity
+        UART_BAUDRATE_BAUDRATE_Baud115200
+    };
 
-  r = calloc(1,sizeof(roomba_comm_t));
-  assert(r);
-  r->fd = -1;
-  r->mode = ROOMBA_MODE_OFF;
-  strncpy(r->serial_port,serial_port,sizeof(r->serial_port)-1);
-  return(r);
+    APP_UART_FIFO_INIT( &comm_params,
+                       UART_RX_BUF_SIZE,
+                       UART_TX_BUF_SIZE,
+                       uart_event_handle,
+                       APP_IRQ_PRIORITY_LOW,
+                       err_code);
+    APP_ERROR_CHECK(err_code);
 }
 
 void

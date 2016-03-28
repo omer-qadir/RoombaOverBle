@@ -47,7 +47,7 @@ extern "C" {
 #define ROOMBA_OPCODE_SENSORS          142
 #define ROOMBA_OPCODE_FORCEDOCK        143
 
-#define ROOMBA_DELAY_MODECHANGE_MS      20
+// #define ROOMBA_DELAY_MODECHANGE_MS      20 // don't need the delaying function for the devkit implementation
 
 #define ROOMBA_MODE_OFF                  0
 #define ROOMBA_MODE_PASSIVE              1
@@ -82,13 +82,24 @@ extern "C" {
   #define NORMALIZE(z) atan2(sin(z), cos(z))
 #endif
 
-typedef struct
+class roomba_comm
 {
-  /* Serial port to which the robot is connected */
-  char serial_port[PATH_MAX];
-  /* File descriptor associated with serial connection (-1 if no valid
-   * connection) */
-  int fd;
+	private:
+	// new variables for the devkit operation
+	const uint8_t rxPinNumber, txPinNumber, rtsPinNumber, ctsPinNumber;
+	const bool parityMode;
+	const uint32_t baudRate;
+	const uint32_t rxBufSize, txBufSize;
+	const uint32_t priority;
+
+	protected:
+// don't need a serial port in the devkit. Have new variables
+//
+//  /* Serial port to which the robot is connected */
+//  char serial_port[PATH_MAX];
+//  /* File descriptor associated with serial connection (-1 if no valid
+//   * connection) */
+//  int fd;
   /* Current operation mode; one of ROOMBA_MODE_* */
   unsigned char mode;
   /* Integrated odometric position [m m rad] */
@@ -119,30 +130,32 @@ typedef struct
   double charge;
   /* Capacity */
   double capacity;
-} roomba_comm_t;
 
-roomba_comm_t* roomba_create(const char* serial_port);
-void roomba_destroy(roomba_comm_t* r);
-int roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500);
-int roomba_init(roomba_comm_t* r, unsigned char fullcontrol);
-int roomba_close(roomba_comm_t* r);
-int roomba_set_speeds(roomba_comm_t* r, double tv, double rv);
-int roomba_parse_sensor_packet(roomba_comm_t* r, 
-                               unsigned char* buf, size_t buflen);
-int roomba_get_sensors(roomba_comm_t* r, int timeout);
-void roomba_print(roomba_comm_t* r);
-int roomba_clean(roomba_comm_t* r);
-int roomba_forcedock(roomba_comm_t* r);
+	public:
 
-int roomba_set_song(roomba_comm_t* r, unsigned char songNumber, 
-                    unsigned char songLength, unsigned char *notes, 
-                    unsigned char *noteLengths);
-int roomba_play_song(roomba_comm_t *r, unsigned char songNumber);
+	roomba_comm();
+	void roomba_destroy(roomba_comm_t* r);
+	int roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500);
+	int roomba_init(roomba_comm_t* r, unsigned char fullcontrol);
+	int roomba_close(roomba_comm_t* r);
+	int roomba_set_speeds(roomba_comm_t* r, double tv, double rv);
+	int roomba_parse_sensor_packet(roomba_comm_t* r, 
+																 unsigned char* buf, size_t buflen);
+	int roomba_get_sensors(roomba_comm_t* r, int timeout);
+	void roomba_print(roomba_comm_t* r);
+	int roomba_clean(roomba_comm_t* r);
+	int roomba_forcedock(roomba_comm_t* r);
 
-int roomba_vacuum(roomba_comm_t *r, int state);
-int roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, 
-                    uint8_t clean, uint8_t spot, uint8_t status, 
-                    uint8_t power_color, uint8_t power_intensity );
+	int roomba_set_song(roomba_comm_t* r, unsigned char songNumber, 
+											unsigned char songLength, unsigned char *notes, 
+											unsigned char *noteLengths);
+	int roomba_play_song(roomba_comm_t *r, unsigned char songNumber);
+
+	int roomba_vacuum(roomba_comm_t *r, int state);
+	int roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, 
+											uint8_t clean, uint8_t spot, uint8_t status, 
+											uint8_t power_color, uint8_t power_intensity );
+};
 
 #ifdef __cplusplus
 }
