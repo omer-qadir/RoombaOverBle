@@ -427,6 +427,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>roomba_comms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\roomba_comms.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2329,6 +2334,11 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>roomba_comms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\roomba_comms.c</FilePath>
             </File>
           </Files>
         </Group>
