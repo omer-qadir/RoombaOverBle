@@ -30,6 +30,8 @@
 //#include <termios.h>
 #include <math.h>
 #include <stdio.h>
+//#include <core_cm4.h>
+#include "nrf.h"
 //#include <unistd.h>
 //#include <netinet/in.h>
 #define 	ntohs(v)   (uint16_t)(__rev(v) >> 16)
