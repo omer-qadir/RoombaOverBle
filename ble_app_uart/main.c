@@ -534,8 +534,8 @@ static void uart_init(void)
     uint32_t                     err_code;
     const app_uart_comm_params_t comm_params =
     {
-        28, // RX_PIN_NUMBER,
-        29, // TX_PIN_NUMBER,
+        28, // RX_PIN_NUMBER,  connects to TXD (PIN 4) on Roomba
+        29, // TX_PIN_NUMBER,  connects to RXD (PIN 3) on Roomba
         RTS_PIN_NUMBER,
         CTS_PIN_NUMBER,
         //APP_UART_FLOW_CONTROL_ENABLED,
