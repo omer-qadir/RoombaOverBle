@@ -472,25 +472,27 @@ void bsp_event_handler(bsp_event_t event)
 /**@snippet [Handling the data received over UART] */
 void uart_event_handle(app_uart_evt_t * p_event)
 {
-    static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
-    static uint8_t index = 0, bleIndex=0;
+    static uint8_t uartDataArray[UART_RX_BUF_SIZE];
+    static uint8_t bleDataArray[BLE_NUS_MAX_DATA_LEN];
+    static uint8_t uartByteIndex = 0, blePacketIndex=0;
     uint32_t       err_code;
 
     switch (p_event->evt_type)
     {
         case APP_UART_DATA_READY:
-            UNUSED_VARIABLE(app_uart_get(&data_array[bleIndex]));
+            UNUSED_VARIABLE(app_uart_get(&bleDataArray[blePacketIndex]));
+						uartDataArray[uartByteIndex] = bleDataArray[blePacketIndex];
 
 #if (DEBUG_LEVEL >= 0)
 						ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
-						ITM_SendChar (data_array[bleIndex]);	// log data byte
+						ITM_SendChar (bleDataArray[blePacketIndex]);	// log data byte
 #endif
-            index++;
-						bleIndex++;
+						uartByteIndex++;
+            blePacketIndex++;
 
-            if ( (index == roombaExpectedResponseLength) || (bleIndex >= (BLE_NUS_MAX_DATA_LEN)))
+            if ( (uartByteIndex == roombaExpectedResponseLength) || (blePacketIndex >= (BLE_NUS_MAX_DATA_LEN)))
             {
-                err_code = ble_nus_string_send(&m_nus, data_array, bleIndex);
+                err_code = ble_nus_string_send(&m_nus, bleDataArray, blePacketIndex);
                 if (err_code != NRF_ERROR_INVALID_STATE)
                 {
                     APP_ERROR_CHECK(err_code);
@@ -498,16 +500,18 @@ void uart_event_handle(app_uart_evt_t * p_event)
                 
 								ITM_SendString ("\ndata sent over ble\n");
 								
-								bleIndex = 0;
-								if (index == roombaExpectedResponseLength)
-									index = 0;
-#if (DEBUG_LEVEL >= 0)
-								if (roombaExpectedResponseLength == ROOMBA_SENSOR_PACKET_SIZE)
+								blePacketIndex = 0;
+								if (uartByteIndex == roombaExpectedResponseLength)
 								{
-									roomba_comm_t roombaState;
-									roomba_parse_sensor_packet (&roombaState, data_array, bleIndex); // TODO : data_array might hold part of a packet. (index vs bleIndex)
-								}
+#if (DEBUG_LEVEL >= 0)
+									if (roombaExpectedResponseLength == ROOMBA_SENSOR_PACKET_SIZE)
+									{
+										roomba_comm_t roombaState;
+										roomba_parse_sensor_packet (&roombaState, uartDataArray, uartByteIndex);
+									}
 #endif
+									uartByteIndex = 0;
+								}
             }
             break;
 
