@@ -184,7 +184,7 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 		case 'g' :
 		{
 			uint8_t roombaSensorGetCommand[3] = {142, 2, '\0'};
-			printf( (const char*)roombaSensorGetCommand );
+			printf( "%s", (const char*)roombaSensorGetCommand );
 			roombaExpectedResponseLength = 6;
 #if (DEBUG_LEVEL >= 0)
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
