@@ -28,6 +28,8 @@ extern "C" {
 #endif
 
 #include <limits.h>
+#include <stdint.h>
+#include <stddef.h>
 
 /* command opcodes */
 #define ROOMBA_OPCODE_START            128
@@ -85,7 +87,7 @@ extern "C" {
 typedef struct
 {
   /* Serial port to which the robot is connected */
-  char serial_port[PATH_MAX];
+  char serial_port[2]; // PATH_MAX];
   /* File descriptor associated with serial connection (-1 if no valid
    * connection) */
   int fd;
@@ -121,15 +123,15 @@ typedef struct
   double capacity;
 } roomba_comm_t;
 
-roomba_comm_t* roomba_create(const char* serial_port);
-void roomba_destroy(roomba_comm_t* r);
+//roomba_comm_t* roomba_create(const char* serial_port);
+//void roomba_destroy(roomba_comm_t* r);
 int roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500);
 int roomba_init(roomba_comm_t* r, unsigned char fullcontrol);
 int roomba_close(roomba_comm_t* r);
 int roomba_set_speeds(roomba_comm_t* r, double tv, double rv);
 int roomba_parse_sensor_packet(roomba_comm_t* r, 
                                unsigned char* buf, size_t buflen);
-int roomba_get_sensors(roomba_comm_t* r, int timeout);
+int roomba_get_sensors(void); // roomba_comm_t* r, int timeout);
 void roomba_print(roomba_comm_t* r);
 int roomba_clean(roomba_comm_t* r);
 int roomba_forcedock(roomba_comm_t* r);
@@ -143,6 +145,10 @@ int roomba_vacuum(roomba_comm_t *r, int state);
 int roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, 
                     uint8_t clean, uint8_t spot, uint8_t status, 
                     uint8_t power_color, uint8_t power_intensity );
+
+
+extern void ITM_SendString (uint8_t *str);
+extern void roombaTxBuf (uint8_t *buf, uint16_t size);
 
 #ifdef __cplusplus
 }

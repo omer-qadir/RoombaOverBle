@@ -38,6 +38,8 @@
 #include "bsp.h"
 #include "bsp_btn_ble.h"
 #include "roomba.h"
+#include "src/roomba_comms.h"
+
 
 #define DEBUG_LEVEL 1
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include the service_changed characteristic. If not enabled, the server's database cannot be changed for the lifetime of the device. */
@@ -72,7 +74,7 @@ static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
 static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}};  /**< Universally unique service identifier. */
 
-static uint8_t													roombaExpectedResponseLength;
+uint8_t													roombaExpectedResponseLength;
 
 /**@brief Function for assert macro callback.
  *
@@ -182,12 +184,20 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 		case 'g' :
 		{
 			uint8_t roombaSensorGetCommand[3] = {142, 2, '\0'};
-			printf( (const char*)roombaSensorGetCommand );
+			printf( "%s", (const char*)roombaSensorGetCommand );
 			roombaExpectedResponseLength = 6;
 #if (DEBUG_LEVEL >= 0)
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
 //				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
 			ITM_SendChar ('g');
+#endif
+		}
+			break;
+		case 'G' :
+		{
+			roomba_get_sensors();
+#if (DEBUG_LEVEL >= 0)
+			ITM_SendChar ('G');
 #endif
 		}
 			break;
@@ -462,24 +472,27 @@ void bsp_event_handler(bsp_event_t event)
 /**@snippet [Handling the data received over UART] */
 void uart_event_handle(app_uart_evt_t * p_event)
 {
-    static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
-    static uint8_t index = 0;
+    static uint8_t uartDataArray[UART_RX_BUF_SIZE];
+    static uint8_t bleDataArray[BLE_NUS_MAX_DATA_LEN];
+    static uint8_t uartByteIndex = 0, blePacketIndex=0;
     uint32_t       err_code;
 
     switch (p_event->evt_type)
     {
         case APP_UART_DATA_READY:
-            UNUSED_VARIABLE(app_uart_get(&data_array[index]));
+            UNUSED_VARIABLE(app_uart_get(&bleDataArray[blePacketIndex]));
+						uartDataArray[uartByteIndex] = bleDataArray[blePacketIndex];
 
 #if (DEBUG_LEVEL >= 0)
 						ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
-						ITM_SendChar (data_array[index]);	// log data byte
+						ITM_SendChar (bleDataArray[blePacketIndex]);	// log data byte
 #endif
-            index++;
+						uartByteIndex++;
+            blePacketIndex++;
 
-            if ( (index == roombaExpectedResponseLength) || (data_array[index - 1] == '\n') || (index >= (BLE_NUS_MAX_DATA_LEN)))
+            if ( (uartByteIndex == roombaExpectedResponseLength) || (blePacketIndex >= (BLE_NUS_MAX_DATA_LEN)))
             {
-                err_code = ble_nus_string_send(&m_nus, data_array, index);
+                err_code = ble_nus_string_send(&m_nus, bleDataArray, blePacketIndex);
                 if (err_code != NRF_ERROR_INVALID_STATE)
                 {
                     APP_ERROR_CHECK(err_code);
@@ -487,7 +500,18 @@ void uart_event_handle(app_uart_evt_t * p_event)
                 
 								ITM_SendString ("\ndata sent over ble\n");
 								
-                index = 0;
+								blePacketIndex = 0;
+								if (uartByteIndex == roombaExpectedResponseLength)
+								{
+#if (DEBUG_LEVEL >= 0)
+									if (roombaExpectedResponseLength == ROOMBA_SENSOR_PACKET_SIZE)
+									{
+										roomba_comm_t roombaState;
+										roomba_parse_sensor_packet (&roombaState, uartDataArray, uartByteIndex);
+									}
+#endif
+									uartByteIndex = 0;
+								}
             }
             break;
 
@@ -514,8 +538,8 @@ static void uart_init(void)
     uint32_t                     err_code;
     const app_uart_comm_params_t comm_params =
     {
-        28, // RX_PIN_NUMBER,
-        29, // TX_PIN_NUMBER,
+        28, // RX_PIN_NUMBER,  connects to TXD (PIN 4) on Roomba
+        29, // TX_PIN_NUMBER,  connects to RXD (PIN 3) on Roomba
         RTS_PIN_NUMBER,
         CTS_PIN_NUMBER,
         //APP_UART_FLOW_CONTROL_ENABLED,

@@ -10,14 +10,8 @@
 
 
 //#define ROOMBA_NULL_TERM_CMD(OPCODE)		((const char*)(OPCODE<<8 | '\0'))
-__STATIC_INLINE void roombaPrintfCmd (uint8_t cmd){
-	uint8_t nullTerminatedCommand[2] = {cmd, '\0'};
-	printf( (const char*)nullTerminatedCommand );
-}
-
-__STATIC_INLINE void ITM_SendString (uint8_t *str) {
-	for (int ii=0; ii< strlen((const char*)str); ii++)
-		ITM_SendChar (str[ii]);
-}
+void roombaPrintfCmd (uint8_t cmd);
+void ITM_SendString (uint8_t *str);
+void roombaTxBuf (uint8_t *buf, uint16_t size);
 
 #endif

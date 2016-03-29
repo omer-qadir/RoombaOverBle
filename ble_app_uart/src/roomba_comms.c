@@ -20,26 +20,34 @@
  *
  */
 
-#include <errno.h>
+//#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#define NDEBUG // this is to disable the assert calls. The macro must be defined before the assert.h file is included
 #include <assert.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <termios.h>
+//#include <fcntl.h>
+//#include <sys/stat.h>
+//#include <termios.h>
 #include <math.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <netinet/in.h>
+//#include <core_cm4.h>
+#include "nrf.h"
+//#include <unistd.h>
+//#include <netinet/in.h>
+#define 	ntohs(v)   (uint16_t)(__rev(v) >> 16)
 
-#include "config.h"
+//#include "config.h"
 
-#include <playerconfig.h>
-#include <replace/replace.h>
+//#include <playerconfig.h>
+//#include <replace/replace.h>
 //#include <sys/poll.h>
 
 #include "roomba_comms.h"
+//#include "roomba.h"
 
+extern uint8_t													roombaExpectedResponseLength;
+
+/*
 roomba_comm_t*
 roomba_create(const char* serial_port)
 {
@@ -52,16 +60,21 @@ roomba_create(const char* serial_port)
   strncpy(r->serial_port,serial_port,sizeof(r->serial_port)-1);
   return(r);
 }
+*/
 
+/*
 void
 roomba_destroy(roomba_comm_t* r)
 {
   free(r);
 }
+*/
 
 int
 roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
 {
+
+/*
   struct termios term;
   int flags;
 
@@ -117,25 +130,26 @@ roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
     r->fd = -1;
     return(-1);
   }
-
+*/
   if(roomba_init(r, fullcontrol) < 0)
   {
-    puts("failed to initialize connection");
-    close(r->fd);
-    r->fd = -1;
+    ITM_SendString("failed to initialize connection");
+    //close(r->fd);
+    //r->fd = -1;
     return(-1);
   }
 
-  if(roomba_get_sensors(r, 1000) < 0)
+  if(roomba_get_sensors() < 0)
   {
-    puts("roomba_open():failed to get data");
-    close(r->fd);
-    r->fd = -1;
+    ITM_SendString("roomba_open():failed to get data");
+    //close(r->fd);
+    //r->fd = -1;
     return(-1);
   }
 
   /* We know the robot is there; switch to blocking */
   /* ok, we got data, so now set NONBLOCK, and continue */
+/*
   if((flags = fcntl(r->fd, F_GETFL)) < 0)
   {
     perror("roomba_open():fcntl():");
@@ -150,8 +164,9 @@ roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
     r->fd = -1;
     return(-1);
   }
-
-  puts("Done.");
+*/
+  //puts("Done.");
+	ITM_SendString ("Done.");
 
   return(0);
 }
@@ -161,36 +176,47 @@ roomba_init(roomba_comm_t* r, unsigned char fullcontrol)
 {
   unsigned char cmdbuf[1];
 
-  usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
+  //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
 
   cmdbuf[0] = ROOMBA_OPCODE_START;
+	/*
   if(write(r->fd, cmdbuf, 1) < 0)
   {
     perror("roomba_init():write():");
     return(-1);
   }
+	*/
+
+	roombaTxBuf( cmdbuf, 1 );
   r->mode = ROOMBA_MODE_PASSIVE;
 
-  usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
+  //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
 
   cmdbuf[0] = ROOMBA_OPCODE_CONTROL;
+	/*
   if(write(r->fd, cmdbuf, 1) < 0)
   {
     perror("roomba_init():write():");
     return(-1);
   }
+	*/
+	
+	roombaTxBuf( cmdbuf, 1 );
   r->mode = ROOMBA_MODE_SAFE;
 
-  usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
+  //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
 
   if(fullcontrol)
   {
     cmdbuf[0] = ROOMBA_OPCODE_FULL;
+		/*
     if(write(r->fd, cmdbuf, 1) < 0)
     {
       perror("roomba_init():write():");
       return(-1);
     }
+		*/
+		roombaTxBuf( cmdbuf, 1 );
     r->mode = ROOMBA_MODE_FULL;
   }
 
@@ -204,7 +230,7 @@ roomba_close(roomba_comm_t* r)
 
   roomba_set_speeds(r, 0.0, 0.0);
 
-  usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
+  //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
 
   /*
   cmdbuf[0] = ROOMBA_OPCODE_POWER;
@@ -215,13 +241,14 @@ roomba_close(roomba_comm_t* r)
 
   usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
   */
-
+/*
   if(close(r->fd) < 0)
   {
     perror("roomba_close():close():");
     return(-1);
   }
   else
+*/
     return(0);
 }
 
@@ -274,36 +301,44 @@ roomba_set_speeds(roomba_comm_t* r, double tv, double rv)
   //printf("set_speeds: %X %X %X %X %X\n",
          //cmdbuf[0], cmdbuf[1], cmdbuf[2], cmdbuf[3], cmdbuf[4]);
 
+	/*
   if(write(r->fd, cmdbuf, 5) < 0)
   {
     perror("roomba_set_speeds():write():");
     return(-1);
   }
   else
+	*/
+	roombaTxBuf (cmdbuf, 5);
     return(0);
 }
 
 int
-roomba_get_sensors(roomba_comm_t* r, int timeout)
+roomba_get_sensors(void) //roomba_comm_t* r, int timeout)
 {
-  struct pollfd ufd[1];
+  // struct pollfd ufd[1];
   unsigned char cmdbuf[2];
-  unsigned char databuf[ROOMBA_SENSOR_PACKET_SIZE];
-  int retval;
-  int numread;
-  int totalnumread;
+  //unsigned char databuf[ROOMBA_SENSOR_PACKET_SIZE];
+  //int retval;
+  //int numread;
+  //int totalnumread;
   //int i;
 
   cmdbuf[0] = ROOMBA_OPCODE_SENSORS;
   /* Zero to get all sensor data */
   cmdbuf[1] = 0;
 
+	/*
   if(write(r->fd, cmdbuf, 2) < 0)
   {
     perror("roomba_get_sensors():write():");
     return(-1);
   }
+	*/
+	roombaTxBuf (cmdbuf, 2);
+	roombaExpectedResponseLength = ROOMBA_SENSOR_PACKET_SIZE;
 
+/*
   ufd[0].fd = r->fd;
   ufd[0].events = POLLIN;
 
@@ -337,15 +372,15 @@ roomba_get_sensors(roomba_comm_t* r, int timeout)
       else
       {
         totalnumread += numread;
-        /*printf("read %d bytes; buffer so far:\n", numread);
-        for(i=0;i<totalnumread;i++)
-          printf("%x ", databuf[i]);
-        puts("");
-        */
+        //printf("read %d bytes; buffer so far:\n", numread);
+        //for(i=0;i<totalnumread;i++)
+        //  printf("%x ", databuf[i]);
+        //puts("");
       }
     }
   }
   roomba_parse_sensor_packet(r, databuf, (size_t)totalnumread);
+	*/
   return(0);
 }
 
@@ -360,7 +395,7 @@ roomba_parse_sensor_packet(roomba_comm_t* r, unsigned char* buf, size_t buflen)
 
   if(buflen != ROOMBA_SENSOR_PACKET_SIZE)
   {
-    puts("roomba_parse_sensor_packet():packet is wrong size");
+    ITM_SendString("roomba_parse_sensor_packet():packet is wrong size");
     return(-1);
   }
 
@@ -445,14 +480,18 @@ roomba_parse_sensor_packet(roomba_comm_t* r, unsigned char* buf, size_t buflen)
 int
 roomba_clean(roomba_comm_t* r)
 {
+
   unsigned char cmdbuf[1];
 
   cmdbuf[0] = ROOMBA_OPCODE_CLEAN;
+	/*
   if(write(r->fd, cmdbuf, 1) < 0)
   {
     perror("roomba_clean():write():");
     return(-1);
   }
+	*/
+	roombaTxBuf (cmdbuf, 1);
   return(0);
 }
 
@@ -462,37 +501,55 @@ roomba_forcedock(roomba_comm_t* r)
   unsigned char cmdbuf[1];
 
   cmdbuf[0] = ROOMBA_OPCODE_FORCEDOCK;
+	/*
   if(write(r->fd, cmdbuf, 1) < 0)
   {
     perror("roomba_seek_home():write():");
     return(-1);
   }
+	*/
+	roombaTxBuf (cmdbuf, 1);
   return(0);
 }
+
 
 void
 roomba_print(roomba_comm_t* r)
 {
-  printf("mode: %d\n", r->mode);
-  printf("position: %.3lf %.3lf %.3lf\n", r->ox, r->oy, r->oa);
-  printf("bumpers: l:%d r:%d\n", r->bumper_left, r->bumper_right);
-  printf("wall: %d virtual wall: %d\n", r->wall, r->virtual_wall);
-  printf("wheeldrops: c:%d l:%d r:%d\n",
+	char str[100];
+  sprintf(str, "mode: %d\n", r->mode);
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "position: %.3lf %.3lf %.3lf\n", r->ox, r->oy, r->oa);
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "bumpers: l:%d r:%d\n", r->bumper_left, r->bumper_right);
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "wall: %d virtual wall: %d\n", r->wall, r->virtual_wall);
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "wheeldrops: c:%d l:%d r:%d\n",
          r->wheeldrop_caster, r->wheeldrop_left, r->wheeldrop_right);
-  printf("cliff: l:%d fl:%d fr:%d r:%d\n",
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "cliff: l:%d fl:%d fr:%d r:%d\n",
          r->cliff_left, r->cliff_frontleft, r->cliff_frontright, r->cliff_right);
-  printf("overcurrent: dl:%d dr:%d mb:%d sb:%d v:%d\n",
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "overcurrent: dl:%d dr:%d mb:%d sb:%d v:%d\n",
          r->overcurrent_driveleft, r->overcurrent_driveright,
          r->overcurrent_mainbrush, r->overcurrent_sidebrush, r->overcurrent_vacuum);
-  printf("dirt: l:%d r:%d\n", r->dirtdetector_left, r->dirtdetector_right);
-  printf("remote opcode: %d\n", r->remote_opcode);
-  printf("buttons: p:%d s:%d c:%d m:%d\n",
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "dirt: l:%d r:%d\n", r->dirtdetector_left, r->dirtdetector_right);
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "remote opcode: %d\n", r->remote_opcode);
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "buttons: p:%d s:%d c:%d m:%d\n",
          r->button_power, r->button_spot, r->button_clean, r->button_max);
-  printf("charging state: %d\n", r->charging_state);
-  printf("battery: voltage:%.3lf current:%.3lf temp:%.3lf charge:%.3lf capacity:%.3f\n",
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "charging state: %d\n", r->charging_state);
+	ITM_SendString ((uint8_t*)str);
+  sprintf(str, "battery: voltage:%.3lf current:%.3lf temp:%.3lf charge:%.3lf capacity:%.3f\n",
          r->voltage, r->current, r->temperature, r->charge, r->capacity);
+	ITM_SendString ((uint8_t*)str);
 
 }
+
 
 int roomba_set_song(roomba_comm_t* r, unsigned char songNumber, unsigned char songLength, unsigned char *notes, unsigned char *noteLengths)
 {
@@ -510,12 +567,15 @@ int roomba_set_song(roomba_comm_t* r, unsigned char songNumber, unsigned char so
     cmdbuf[3+(2*i)+1] = noteLengths[i];
   }
 
+	/*
   if(write(r->fd, cmdbuf, size) < 0)
   {
     perror("roomba_set_song():write():");
     return(-1);
   }
   else
+	*/
+	roombaTxBuf (cmdbuf, size);
     return(0);
 }
 
@@ -527,12 +587,15 @@ roomba_play_song(roomba_comm_t *r, unsigned char songNumber)
   cmdbuf[0] = ROOMBA_OPCODE_PLAY;
   cmdbuf[1] = songNumber;
 
+	/*
   if(write(r->fd, cmdbuf, 2) < 0)
   {
     perror("roomba_set_song():write():");
     return(-1);
   }
   else
+	*/
+	roombaTxBuf (cmdbuf, 2);
     return(0);
 }
 
@@ -544,31 +607,56 @@ roomba_vacuum(roomba_comm_t *r, int state)
   cmdbuf[0] = ROOMBA_OPCODE_MOTORS;
   cmdbuf[1] = state;
 
+	/*
   if (write(r->fd, cmdbuf, 2) < 0)
   {
     perror("roomba_vacuum():write():");
     return -1;
   }
+	*/
 
+	roombaTxBuf (cmdbuf, 2);
   return 0;
 }
 
 int
 roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, uint8_t clean, uint8_t spot, uint8_t status, uint8_t power_color, uint8_t power_intensity )
 {
+	char str[100];
   unsigned char cmdbuf[5];
   cmdbuf[0] = ROOMBA_OPCODE_LEDS;
   cmdbuf[1] = dirt_detect | max<<1 | clean<<2 | spot<<3 | status<<4;
   cmdbuf[2] = power_color;
   cmdbuf[3] = power_intensity;
 
-  printf("Set LEDS[%d][%d][%d]\n",cmdbuf[1], cmdbuf[2], cmdbuf[3]);
+  sprintf(str, "Set LEDS[%d][%d][%d]\n",cmdbuf[1], cmdbuf[2], cmdbuf[3]);
+	ITM_SendString ((uint8_t*)str);
+	/*
   if (write(r->fd, cmdbuf, 4) < 0)
   {
     perror("roomba_set_leds():write():");
     return -1;
   }
+	*/
 
+	roombaTxBuf (cmdbuf, 4);
   return 0;
 }
 
+
+
+void roombaPrintfCmd (uint8_t cmd){
+	//uint8_t nullTerminatedCommand[2] = {cmd, '\0'};
+	//printf( "%s", nullTerminatedCommand );
+	printf( "%c", cmd );
+}
+
+void ITM_SendString (uint8_t *str) {
+	for (int ii=0; ii< strlen((const char*)str); ii++)
+		ITM_SendChar (str[ii]);
+}
+
+void roombaTxBuf (uint8_t *buf, uint16_t size){
+	for (uint16_t ii=0; ii<size; ii++)
+		printf( "%c", buf[ii] );
+}
