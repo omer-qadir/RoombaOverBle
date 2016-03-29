@@ -646,8 +646,9 @@ roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, uint8_t clea
 
 
 void roombaPrintfCmd (uint8_t cmd){
-	uint8_t nullTerminatedCommand[2] = {cmd, '\0'};
-	printf( "%s", nullTerminatedCommand );
+	//uint8_t nullTerminatedCommand[2] = {cmd, '\0'};
+	//printf( "%s", nullTerminatedCommand );
+	printf( "%c", cmd );
 }
 
 void ITM_SendString (uint8_t *str) {
