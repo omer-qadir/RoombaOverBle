@@ -38,6 +38,8 @@
 #include "bsp.h"
 #include "bsp_btn_ble.h"
 #include "roomba.h"
+#include "src/roomba_comms.h"
+
 
 #define DEBUG_LEVEL 1
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include the service_changed characteristic. If not enabled, the server's database cannot be changed for the lifetime of the device. */
@@ -188,6 +190,14 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
 //				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
 			ITM_SendChar ('g');
+#endif
+		}
+			break;
+		case 'G' :
+		{
+			roomba_get_sensors();
+#if (DEBUG_LEVEL >= 0)
+			ITM_SendChar ('G');
 #endif
 		}
 			break;
@@ -463,23 +473,24 @@ void bsp_event_handler(bsp_event_t event)
 void uart_event_handle(app_uart_evt_t * p_event)
 {
     static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
-    static uint8_t index = 0;
+    static uint8_t index = 0, bleIndex=0;
     uint32_t       err_code;
 
     switch (p_event->evt_type)
     {
         case APP_UART_DATA_READY:
-            UNUSED_VARIABLE(app_uart_get(&data_array[index]));
+            UNUSED_VARIABLE(app_uart_get(&data_array[bleIndex]));
 
 #if (DEBUG_LEVEL >= 0)
 						ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
-						ITM_SendChar (data_array[index]);	// log data byte
+						ITM_SendChar (data_array[bleIndex]);	// log data byte
 #endif
             index++;
+						bleIndex++;
 
-            if ( (index == roombaExpectedResponseLength) || (data_array[index - 1] == '\n') || (index >= (BLE_NUS_MAX_DATA_LEN)))
+            if ( (index == roombaExpectedResponseLength) || (bleIndex >= (BLE_NUS_MAX_DATA_LEN)))
             {
-                err_code = ble_nus_string_send(&m_nus, data_array, index);
+                err_code = ble_nus_string_send(&m_nus, data_array, bleIndex);
                 if (err_code != NRF_ERROR_INVALID_STATE)
                 {
                     APP_ERROR_CHECK(err_code);
@@ -487,7 +498,16 @@ void uart_event_handle(app_uart_evt_t * p_event)
                 
 								ITM_SendString ("\ndata sent over ble\n");
 								
-                index = 0;
+								bleIndex = 0;
+								if (index == roombaExpectedResponseLength)
+									index = 0;
+#if (DEBUG_LEVEL >= 0)
+								if (roombaExpectedResponseLength == ROOMBA_SENSOR_PACKET_SIZE)
+								{
+									roomba_comm_t roombaState;
+									roomba_parse_sensor_packet (&roombaState, data_array, bleIndex); // TODO : data_array might hold part of a packet. (index vs bleIndex)
+								}
+#endif
             }
             break;
 
