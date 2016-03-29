@@ -139,7 +139,7 @@ roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
     return(-1);
   }
 
-  if(roomba_get_sensors(r, 1000) < 0)
+  if(roomba_get_sensors() < 0)
   {
     ITM_SendString("roomba_open():failed to get data");
     //close(r->fd);
@@ -314,7 +314,7 @@ roomba_set_speeds(roomba_comm_t* r, double tv, double rv)
 }
 
 int
-roomba_get_sensors(roomba_comm_t* r, int timeout)
+roomba_get_sensors(void) //roomba_comm_t* r, int timeout)
 {
   // struct pollfd ufd[1];
   unsigned char cmdbuf[2];
