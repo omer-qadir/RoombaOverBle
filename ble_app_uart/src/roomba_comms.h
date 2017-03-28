@@ -30,6 +30,7 @@ extern "C" {
 #include <limits.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "SEGGER_RTT.h"
 
 /* command opcodes */
 #define ROOMBA_OPCODE_START            128
@@ -147,7 +148,7 @@ int roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max,
                     uint8_t power_color, uint8_t power_intensity );
 
 
-extern void ITM_SendString (uint8_t *str);
+// extern void ITM_SendString (uint8_t *str);
 extern void roombaTxBuf (uint8_t *buf, uint16_t size);
 
 #ifdef __cplusplus

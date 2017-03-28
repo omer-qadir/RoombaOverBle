@@ -133,7 +133,8 @@ roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
 */
   if(roomba_init(r, fullcontrol) < 0)
   {
-    ITM_SendString("failed to initialize connection");
+    //ITM_SendString("failed to initialize connection");
+		SEGGER_RTT_WriteString (0, "failed to initialize connection\n");
     //close(r->fd);
     //r->fd = -1;
     return(-1);
@@ -141,7 +142,7 @@ roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
 
   if(roomba_get_sensors() < 0)
   {
-    ITM_SendString("roomba_open():failed to get data");
+    SEGGER_RTT_WriteString (0, "roomba_open():failed to get data\n");
     //close(r->fd);
     //r->fd = -1;
     return(-1);
@@ -166,7 +167,7 @@ roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
   }
 */
   //puts("Done.");
-	ITM_SendString ("Done.");
+	SEGGER_RTT_WriteString (0, "Done.\n");
 
   return(0);
 }
@@ -395,7 +396,7 @@ roomba_parse_sensor_packet(roomba_comm_t* r, unsigned char* buf, size_t buflen)
 
   if(buflen != ROOMBA_SENSOR_PACKET_SIZE)
   {
-    ITM_SendString("roomba_parse_sensor_packet():packet is wrong size");
+    SEGGER_RTT_WriteString (0, "roomba_parse_sensor_packet():packet is wrong size");
     return(-1);
   }
 
@@ -518,35 +519,35 @@ roomba_print(roomba_comm_t* r)
 {
 	char str[100];
   sprintf(str, "mode: %d\n", r->mode);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "position: %.3lf %.3lf %.3lf\n", r->ox, r->oy, r->oa);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "bumpers: l:%d r:%d\n", r->bumper_left, r->bumper_right);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "wall: %d virtual wall: %d\n", r->wall, r->virtual_wall);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "wheeldrops: c:%d l:%d r:%d\n",
          r->wheeldrop_caster, r->wheeldrop_left, r->wheeldrop_right);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "cliff: l:%d fl:%d fr:%d r:%d\n",
          r->cliff_left, r->cliff_frontleft, r->cliff_frontright, r->cliff_right);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "overcurrent: dl:%d dr:%d mb:%d sb:%d v:%d\n",
          r->overcurrent_driveleft, r->overcurrent_driveright,
          r->overcurrent_mainbrush, r->overcurrent_sidebrush, r->overcurrent_vacuum);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "dirt: l:%d r:%d\n", r->dirtdetector_left, r->dirtdetector_right);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "remote opcode: %d\n", r->remote_opcode);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "buttons: p:%d s:%d c:%d m:%d\n",
          r->button_power, r->button_spot, r->button_clean, r->button_max);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "charging state: %d\n", r->charging_state);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
   sprintf(str, "battery: voltage:%.3lf current:%.3lf temp:%.3lf charge:%.3lf capacity:%.3f\n",
          r->voltage, r->current, r->temperature, r->charge, r->capacity);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
 
 }
 
@@ -630,7 +631,7 @@ roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, uint8_t clea
   cmdbuf[3] = power_intensity;
 
   sprintf(str, "Set LEDS[%d][%d][%d]\n",cmdbuf[1], cmdbuf[2], cmdbuf[3]);
-	ITM_SendString ((uint8_t*)str);
+	SEGGER_RTT_WriteString (0, str);
 	/*
   if (write(r->fd, cmdbuf, 4) < 0)
   {
@@ -651,11 +652,12 @@ void roombaPrintfCmd (uint8_t cmd){
 	printf( "%c", cmd );
 }
 
+/*
 void ITM_SendString (uint8_t *str) {
 	for (int ii=0; ii< strlen((const char*)str); ii++)
 		ITM_SendChar (str[ii]);
 }
-
+*/
 void roombaTxBuf (uint8_t *buf, uint16_t size){
 	for (uint16_t ii=0; ii<size; ii++)
 		printf( "%c", buf[ii] );

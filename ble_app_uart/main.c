@@ -39,6 +39,7 @@
 #include "bsp_btn_ble.h"
 #include "roomba.h"
 #include "src/roomba_comms.h"
+#include "SEGGER_RTT.h"
 
 
 #define DEBUG_LEVEL 1
@@ -150,14 +151,16 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 	  //printf( roombaSensorGetCommand );
 
 	#if (DEBUG_LEVEL >= 0)
-	ITM_SendChar ('-');
+	// ITM_SendChar ('-');
+  SEGGER_RTT_WriteString (0, "-");
 #endif
 
 	if (length < 1){
 #if (DEBUG_LEVEL >= 0)
-		uint8_t *errorString = "\n\r Error! Wrong code received over BLE";
-			for (int ii=0; ii<strlen ((const char*)errorString); ii++)
-				ITM_SendChar (errorString[ii]);
+		uint8_t *errorString = (uint8_t *)"\n\r Error! Wrong code received over BLE\n";
+    SEGGER_RTT_WriteString (0, (const char*)errorString);
+		//			for (int ii=0; ii<strlen ((const char*)errorString); ii++)
+//				ITM_SendChar (errorString[ii]);
 #endif
 		return;
 	}
@@ -169,7 +172,8 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 #if (DEBUG_LEVEL >= 0)
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
 //				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
-			ITM_SendChar ('c');
+// 			ITM_SendChar ('c');
+      SEGGER_RTT_WriteString (0, "command clean\n");
 #endif
 			break;
 		case 'd' :
@@ -178,7 +182,8 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 #if (DEBUG_LEVEL >= 0)
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
 //				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
-			ITM_SendChar ('d');
+			// ITM_SendChar ('d');
+		  SEGGER_RTT_WriteString (0, "command dock\n");
 #endif
 			break;
 		case 'g' :
@@ -189,7 +194,8 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 #if (DEBUG_LEVEL >= 0)
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
 //				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
-			ITM_SendChar ('g');
+			// ITM_SendChar ('g');
+			SEGGER_RTT_WriteString (0, "get specific sensor data\n");
 #endif
 		}
 			break;
@@ -197,7 +203,8 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 		{
 			roomba_get_sensors();
 #if (DEBUG_LEVEL >= 0)
-			ITM_SendChar ('G');
+			// ITM_SendChar ('G');
+			SEGGER_RTT_WriteString (0, "get all sensor data\n");
 #endif
 		}
 			break;
@@ -211,7 +218,8 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 #if (DEBUG_LEVEL >= 0)
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
 //				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)[ii]);
-			ITM_SendChar ('s');
+			// ITM_SendChar ('s');
+		  SEGGER_RTT_WriteString (0, "command safe mode\n");
 #endif
 			break;
 	}
@@ -484,8 +492,13 @@ void uart_event_handle(app_uart_evt_t * p_event)
 						uartDataArray[uartByteIndex] = bleDataArray[blePacketIndex];
 
 #if (DEBUG_LEVEL >= 0)
-						ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
-						ITM_SendChar (bleDataArray[blePacketIndex]);	// log data byte
+						char* dataByte = "A";
+						sprintf( dataByte, "%c",bleDataArray[blePacketIndex]);
+
+						// ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
+				    SEGGER_RTT_WriteString (0, "+"); // log that data has come from UART and is going over BLE eventually
+						// ITM_SendChar (bleDataArray[blePacketIndex]);	// log data byte
+				    SEGGER_RTT_WriteString (0, dataByte); // log data byte
 #endif
 						uartByteIndex++;
             blePacketIndex++;
@@ -498,7 +511,8 @@ void uart_event_handle(app_uart_evt_t * p_event)
                     APP_ERROR_CHECK(err_code);
                 }
                 
-								ITM_SendString ("\ndata sent over ble\n");
+								// ITM_SendString ("\ndata sent over ble\n");
+								SEGGER_RTT_WriteString (0, "\ndata sent over ble\n");
 								
 								blePacketIndex = 0;
 								if (uartByteIndex == roombaExpectedResponseLength)
@@ -624,6 +638,8 @@ int main(void)
     uint32_t err_code;
     bool erase_bonds;
 
+	  SEGGER_RTT_WriteString(0, "Starting up!\n");
+	
     // Initialize.
     APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
     uart_init();
@@ -644,13 +660,15 @@ int main(void)
 	  roombaPrintfCmd( ROOMBA_CMD_START );
 #if (DEBUG_LEVEL >= 0)
 		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_START)); ii++)
-			ITM_SendChar (ROOMBA_CMD_START);
+			//ITM_SendChar (ROOMBA_CMD_START);
+			SEGGER_RTT_WriteString (0, "\ncommand start\n");
 #endif
 		
 	  roombaPrintfCmd( ROOMBA_CMD_ENTER_SAFE_MODE );
 #if (DEBUG_LEVEL >= 0)
 		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
-			ITM_SendChar (ROOMBA_CMD_ENTER_SAFE_MODE);
+			//ITM_SendChar (ROOMBA_CMD_ENTER_SAFE_MODE);
+			SEGGER_RTT_WriteString (0, "\ncommand safe\n");
 #endif
 
 /*
