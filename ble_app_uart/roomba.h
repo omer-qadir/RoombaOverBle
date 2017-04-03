@@ -10,7 +10,7 @@
 
 
 //#define ROOMBA_NULL_TERM_CMD(OPCODE)		((const char*)(OPCODE<<8 | '\0'))
-void roombaPrintfCmd (uint8_t cmd);
+//void roombaPrintfCmd (uint8_t cmd);
 //void ITM_SendString (uint8_t *str);
 void roombaTxBuf (uint8_t *buf, uint16_t size);
 

@@ -76,6 +76,7 @@ static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;
 static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}};  /**< Universally unique service identifier. */
 
 uint8_t													roombaExpectedResponseLength;
+roomba_comm_t										roombaState;
 
 /**@brief Function for assert macro callback.
  *
@@ -167,6 +168,7 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 		
 	switch (p_data[0]) {
 		case 'c' :
+/*
 			roombaPrintfCmd( ROOMBA_CMD_START );
 			roombaPrintfCmd( ROOMBA_CMD_CLEAN );
 #if (DEBUG_LEVEL >= 0)
@@ -175,8 +177,11 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 // 			ITM_SendChar ('c');
       SEGGER_RTT_WriteString (0, "command clean\n");
 #endif
+*/
+			roomba_clean(&roombaState);
 			break;
 		case 'd' :
+/*
 			roombaPrintfCmd( ROOMBA_CMD_START );
 			roombaPrintfCmd( ROOMBA_CMD_DOCK );
 #if (DEBUG_LEVEL >= 0)
@@ -185,12 +190,17 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 			// ITM_SendChar ('d');
 		  SEGGER_RTT_WriteString (0, "command dock\n");
 #endif
+*/
+			roomba_forcedock(&roombaState);
 			break;
 		case 'g' :
 		{
+/*
 			uint8_t roombaSensorGetCommand[3] = {142, 2, '\0'};
 			printf( "%s", (const char*)roombaSensorGetCommand );
 			roombaExpectedResponseLength = 6;
+*/
+			roomba_get_sensors(&roombaState, 2);
 #if (DEBUG_LEVEL >= 0)
 //			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)); ii++)
 //				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_CLEAN)[ii]);
@@ -201,7 +211,7 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 			break;
 		case 'G' :
 		{
-			roomba_get_sensors();
+			roomba_get_sensors(&roombaState, 0);
 #if (DEBUG_LEVEL >= 0)
 			// ITM_SendChar ('G');
 			SEGGER_RTT_WriteString (0, "get all sensor data\n");
@@ -213,14 +223,7 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 
 		//case 's' :
 		default:
-			roombaPrintfCmd( ROOMBA_CMD_START );
-			roombaPrintfCmd( ROOMBA_CMD_ENTER_SAFE_MODE );
-#if (DEBUG_LEVEL >= 0)
-//			for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)); ii++)
-//				ITM_SendChar (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_ENTER_SAFE_MODE)[ii]);
-			// ITM_SendChar ('s');
-		  SEGGER_RTT_WriteString (0, "command safe mode\n");
-#endif
+			roomba_safe(&roombaState);
 			break;
 	}
 
@@ -492,12 +495,9 @@ void uart_event_handle(app_uart_evt_t * p_event)
 						uartDataArray[uartByteIndex] = bleDataArray[blePacketIndex];
 
 #if (DEBUG_LEVEL >= 0)
-						char* dataByte = "A";
-						sprintf( dataByte, "%c",bleDataArray[blePacketIndex]);
+						char dataByte[2];
+						sprintf( dataByte, "+%c",bleDataArray[blePacketIndex]);
 
-						// ITM_SendChar ('+');		// log that data has come from UART and is going over BLE eventually
-				    SEGGER_RTT_WriteString (0, "+"); // log that data has come from UART and is going over BLE eventually
-						// ITM_SendChar (bleDataArray[blePacketIndex]);	// log data byte
 				    SEGGER_RTT_WriteString (0, dataByte); // log data byte
 #endif
 						uartByteIndex++;
@@ -505,6 +505,7 @@ void uart_event_handle(app_uart_evt_t * p_event)
 
             if ( (uartByteIndex == roombaExpectedResponseLength) || (blePacketIndex >= (BLE_NUS_MAX_DATA_LEN)))
             {
+								roombaState.commState = ROOMBA_COMM_WAITING_FOR_RX;
                 err_code = ble_nus_string_send(&m_nus, bleDataArray, blePacketIndex);
                 if (err_code != NRF_ERROR_INVALID_STATE)
                 {
@@ -657,6 +658,7 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
+/*
 	  roombaPrintfCmd( ROOMBA_CMD_START );
 #if (DEBUG_LEVEL >= 0)
 		//for (int ii=0; ii<strlen (ROOMBA_NULL_TERM_CMD(ROOMBA_CMD_START)); ii++)
@@ -670,7 +672,8 @@ int main(void)
 			//ITM_SendChar (ROOMBA_CMD_ENTER_SAFE_MODE);
 			SEGGER_RTT_WriteString (0, "\ncommand safe\n");
 #endif
-
+*/
+		roomba_open (&roombaState, 0, 0);
 /*
 		roombaPrintfCmd( ROOMBA_CMD_CLEAN );
 #if (DEBUG_LEVEL >= 0)

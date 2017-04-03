@@ -46,6 +46,7 @@
 //#include "roomba.h"
 
 extern uint8_t													roombaExpectedResponseLength;
+extern roomba_comm_t										roombaState;
 
 /*
 roomba_comm_t*
@@ -145,7 +146,7 @@ roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
     return(-1);
   }
 
-  if(roomba_get_sensors() < 0)
+  if(roomba_get_sensors(&roombaState, 0) < 0)
   {
     SEGGER_RTT_WriteString (0, "roomba_open():failed to get data\n");
     //close(r->fd);
@@ -242,16 +243,37 @@ roomba_init(roomba_comm_t* r, unsigned char fullcontrol)
 }
 
 int
-roomba_close(roomba_comm_t* r)
+roomba_safe(roomba_comm_t* r)
 {
-  //unsigned char cmdbuf[1];
+  unsigned char cmdbuf[1];
 
   roomba_set_speeds(r, 0.0, 0.0);
 
   //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
+	cmdbuf[0] = ROOMBA_OPCODE_START;
+  r->mode = ROOMBA_MODE_PASSIVE;
+	roombaTxBuf( cmdbuf, 1 );
 
-  /*
+	cmdbuf[0] = ROOMBA_OPCODE_SAFE;
+  r->mode = ROOMBA_MODE_PASSIVE;
+	roombaTxBuf( cmdbuf, 1 );
+
+#if (DEBUG_LEVEL >= 0)
+		  SEGGER_RTT_WriteString (0, "command safe mode\n");
+#endif
+
+}
+
+int
+roomba_close(roomba_comm_t* r)
+{
+  unsigned char cmdbuf[1];
+
+	roomba_safe (r);
   cmdbuf[0] = ROOMBA_OPCODE_POWER;
+  r->mode = ROOMBA_MODE_OFF;
+	roombaTxBuf( cmdbuf, 1 );
+	/*
   if(write(r->fd, cmdbuf, 1) < 0)
   {
     perror("roomba_close():write():");
@@ -267,7 +289,6 @@ roomba_close(roomba_comm_t* r)
   }
   else
 */
-    return(0);
 
 #if (DEBUG_LEVEL >= 0)
 		  SEGGER_RTT_WriteString (0, "command powered off\n");
@@ -376,6 +397,7 @@ roomba_get_sensors(roomba_comm_t* r, int sensorCmdType)
   //int retval;
   //int numread;
   //int totalnumread;
+	int bytesExpected;
   //int i;
 #if (DEBUG_LEVEL >= 0)
 		  SEGGER_RTT_WriteString (0, "roomba_get_sensors\n");
@@ -383,17 +405,22 @@ roomba_get_sensors(roomba_comm_t* r, int sensorCmdType)
 
   cmdbuf[0] = ROOMBA_OPCODE_SENSORS;
   /* Zero to get all sensor data */
-  cmdbuf[1] = 0;
+  cmdbuf[1] = sensorCmdType;
 
-	/*
-  if(write(r->fd, cmdbuf, 2) < 0)
-  {
-    perror("roomba_get_sensors():write():");
+	if ( (bytesExpected = roomba_get_sensor_packet_size(sensorCmdType)) <= 0 )
+	{
+#if (DEBUG_LEVEL >= 0)
+		char errorString [30];// = "unknown packet type : XYZ \n";
+		sprintf (errorString, "unknown packet type : %3d \n", sensorCmdType);
+	  SEGGER_RTT_WriteString (0, errorString );
+#endif
     return(-1);
-  }
-	*/
+	}
+	
 	roombaTxBuf (cmdbuf, 2);
-	roombaExpectedResponseLength = ROOMBA_SENSOR_PACKET_SIZE;
+	roombaExpectedResponseLength = bytesExpected;
+	// TODO check if the device was already TX-ING
+	r->commState = ROOMBA_COMM_TX_ING;
 
 /*
   ufd[0].fd = r->fd;
@@ -549,9 +576,11 @@ roomba_clean(roomba_comm_t* r)
   }
 	*/
 	roombaTxBuf (cmdbuf, 1);
+
 #if (DEBUG_LEVEL >= 0)
-  SEGGER_RTT_WriteString (0, "command dock\n");
+  SEGGER_RTT_WriteString (0, "command clean\n");
 #endif
+
   return(0);
 }
 
@@ -569,11 +598,9 @@ roomba_forcedock(roomba_comm_t* r)
   }
 	*/
 	roombaTxBuf (cmdbuf, 1);
-
 #if (DEBUG_LEVEL >= 0)
-  SEGGER_RTT_WriteString (0, "command clean\n");
+  SEGGER_RTT_WriteString (0, "command dock\n");
 #endif
-
   return(0);
 }
 
@@ -727,13 +754,13 @@ roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, uint8_t clea
 }
 
 
-
+/*
 void roombaPrintfCmd (uint8_t cmd){
 	//uint8_t nullTerminatedCommand[2] = {cmd, '\0'};
 	//printf( "%s", nullTerminatedCommand );
 	printf( "%c", cmd );
 }
-
+*/
 /*
 void ITM_SendString (uint8_t *str) {
 	for (int ii=0; ii< strlen((const char*)str); ii++)

@@ -57,6 +57,9 @@ extern "C" {
 #define ROOMBA_MODE_SAFE                 2
 #define ROOMBA_MODE_FULL                 3
 
+#define ROOMBA_COMM_WAITING_FOR_RX       0
+#define ROOMBA_COMM_TX_ING               1
+
 #define ROOMBA_TVEL_MAX_MM_S           500     
 #define ROOMBA_RADIUS_MAX_MM          2000
 
@@ -88,12 +91,14 @@ extern "C" {
 typedef struct
 {
   /* Serial port to which the robot is connected */
-  char serial_port[2]; // PATH_MAX];
+  //char serial_port[2]; // PATH_MAX];
   /* File descriptor associated with serial connection (-1 if no valid
    * connection) */
-  int fd;
+  //int fd;
   /* Current operation mode; one of ROOMBA_MODE_* */
   unsigned char mode;
+  /* Current state of serial communication (waiting for data or sending data); one of ROOMBA_COMM_* */
+  unsigned char commState;
   /* Integrated odometric position [m m rad] */
   double ox, oy, oa;
 
@@ -128,6 +133,7 @@ typedef struct
 //void roomba_destroy(roomba_comm_t* r);
 int roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500);
 int roomba_init(roomba_comm_t* r, unsigned char fullcontrol);
+int roomba_safe(roomba_comm_t* r);
 int roomba_close(roomba_comm_t* r);
 int roomba_set_speeds(roomba_comm_t* r, double tv, double rv);
 int roomba_parse_sensor_packet(roomba_comm_t* r, 
