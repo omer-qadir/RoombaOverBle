@@ -132,7 +132,8 @@ int roomba_close(roomba_comm_t* r);
 int roomba_set_speeds(roomba_comm_t* r, double tv, double rv);
 int roomba_parse_sensor_packet(roomba_comm_t* r, 
                                unsigned char* buf, size_t buflen);
-int roomba_get_sensors(void); // roomba_comm_t* r, int timeout);
+int roomba_get_sensor_packet_size(int sensorCmdType);
+int roomba_get_sensors(roomba_comm_t* r, int sensorCmdType);
 void roomba_print(roomba_comm_t* r);
 int roomba_clean(roomba_comm_t* r);
 int roomba_forcedock(roomba_comm_t* r);

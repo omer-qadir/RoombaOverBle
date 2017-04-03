@@ -338,7 +338,37 @@ roomba_set_speeds(roomba_comm_t* r, double tv, double rv)
 }
 
 int
-roomba_get_sensors(void) //roomba_comm_t* r, int timeout)
+roomba_get_sensor_packet_size(int sensorCmdType)
+{
+	static const uint8_t lookupForUpto6[7] = {26, 10, 6, 10, 14, 12, 52};
+	switch (sensorCmdType) 
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+			return lookupForUpto6[sensorCmdType];
+		case 100:
+			return 80;
+		case 101:
+			return 28;
+		case 106:
+			return 12;
+		case 107:
+			return 9;
+		default:	// error
+#if (DEBUG_LEVEL >= 0)
+			SEGGER_RTT_WriteString (0, "unknown packet length\n");
+#endif
+			return 0;
+	}
+}
+
+int
+roomba_get_sensors(roomba_comm_t* r, int sensorCmdType)
 {
   // struct pollfd ufd[1];
   unsigned char cmdbuf[2];
