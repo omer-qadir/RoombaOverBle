@@ -73,6 +73,11 @@ roomba_destroy(roomba_comm_t* r)
 int
 roomba_open(roomba_comm_t* r, unsigned char fullcontrol, int roomba500)
 {
+	// TODO roomba500 needs to be handled. This effects the UART baud rate
+
+#if (DEBUG_LEVEL >= 0)
+	SEGGER_RTT_WriteString (0, "\nroomba open\n");
+#endif
 
 /*
   struct termios term;
@@ -177,6 +182,9 @@ roomba_init(roomba_comm_t* r, unsigned char fullcontrol)
 {
   unsigned char cmdbuf[1];
 
+#if (DEBUG_LEVEL >= 0)
+	SEGGER_RTT_WriteString (0, "\nroomba init\n");
+#endif
   //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
 
   cmdbuf[0] = ROOMBA_OPCODE_START;
@@ -187,9 +195,11 @@ roomba_init(roomba_comm_t* r, unsigned char fullcontrol)
     return(-1);
   }
 	*/
-
 	roombaTxBuf( cmdbuf, 1 );
   r->mode = ROOMBA_MODE_PASSIVE;
+#if (DEBUG_LEVEL >= 0)
+	SEGGER_RTT_WriteString (0, "command start\n");
+#endif
 
   //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
 
@@ -204,6 +214,9 @@ roomba_init(roomba_comm_t* r, unsigned char fullcontrol)
 	
 	roombaTxBuf( cmdbuf, 1 );
   r->mode = ROOMBA_MODE_SAFE;
+#if (DEBUG_LEVEL >= 0)
+	SEGGER_RTT_WriteString (0, "command control\n");
+#endif
 
   //usleep(ROOMBA_DELAY_MODECHANGE_MS * 1e3);
 
@@ -219,6 +232,10 @@ roomba_init(roomba_comm_t* r, unsigned char fullcontrol)
 		*/
 		roombaTxBuf( cmdbuf, 1 );
     r->mode = ROOMBA_MODE_FULL;
+#if (DEBUG_LEVEL >= 0)
+		SEGGER_RTT_WriteString (0, "command full control\n");
+#endif
+
   }
 
   return(0);
@@ -251,6 +268,12 @@ roomba_close(roomba_comm_t* r)
   else
 */
     return(0);
+
+#if (DEBUG_LEVEL >= 0)
+		  SEGGER_RTT_WriteString (0, "command powered off\n");
+#endif
+
+return(0);
 }
 
 int
@@ -324,6 +347,9 @@ roomba_get_sensors(void) //roomba_comm_t* r, int timeout)
   //int numread;
   //int totalnumread;
   //int i;
+#if (DEBUG_LEVEL >= 0)
+		  SEGGER_RTT_WriteString (0, "roomba_get_sensors\n");
+#endif
 
   cmdbuf[0] = ROOMBA_OPCODE_SENSORS;
   /* Zero to get all sensor data */
@@ -493,6 +519,9 @@ roomba_clean(roomba_comm_t* r)
   }
 	*/
 	roombaTxBuf (cmdbuf, 1);
+#if (DEBUG_LEVEL >= 0)
+  SEGGER_RTT_WriteString (0, "command dock\n");
+#endif
   return(0);
 }
 
@@ -510,6 +539,11 @@ roomba_forcedock(roomba_comm_t* r)
   }
 	*/
 	roombaTxBuf (cmdbuf, 1);
+
+#if (DEBUG_LEVEL >= 0)
+  SEGGER_RTT_WriteString (0, "command clean\n");
+#endif
+
   return(0);
 }
 
@@ -577,7 +611,12 @@ int roomba_set_song(roomba_comm_t* r, unsigned char songNumber, unsigned char so
   else
 	*/
 	roombaTxBuf (cmdbuf, size);
-    return(0);
+
+#if (DEBUG_LEVEL >= 0)
+  SEGGER_RTT_WriteString (0, "command set song\n");
+#endif
+
+	return(0);
 }
 
 int
@@ -597,7 +636,12 @@ roomba_play_song(roomba_comm_t *r, unsigned char songNumber)
   else
 	*/
 	roombaTxBuf (cmdbuf, 2);
-    return(0);
+
+#if (DEBUG_LEVEL >= 0)
+  SEGGER_RTT_WriteString (0, "command play song\n");
+#endif
+
+	return(0);
 }
 
 int
@@ -617,6 +661,10 @@ roomba_vacuum(roomba_comm_t *r, int state)
 	*/
 
 	roombaTxBuf (cmdbuf, 2);
+#if (DEBUG_LEVEL >= 0)
+  SEGGER_RTT_WriteString (0, "command vacuum\n");
+#endif
+
   return 0;
 }
 
@@ -641,6 +689,10 @@ roomba_set_leds(roomba_comm_t *r, uint8_t dirt_detect, uint8_t max, uint8_t clea
 	*/
 
 	roombaTxBuf (cmdbuf, 4);
+#if (DEBUG_LEVEL >= 0)
+  SEGGER_RTT_WriteString (0, "command set leds\n");
+#endif
+
   return 0;
 }
 
